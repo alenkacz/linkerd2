@@ -291,7 +291,7 @@ resources for the Linkerd control plane. This command should be followed by
   # Install Linkerd into a non-default namespace.
   linkerd install config -l linkerdtest | kubectl apply -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := errIfGlobalResourcesExist(); err != nil && !options.ignoreCluster {
+			if err := errIfGlobalResourcesExist(options); err != nil && !options.ignoreCluster {
 				fmt.Fprintf(os.Stderr, errMsgGlobalResourcesExist, err)
 				os.Exit(1)
 			}
@@ -328,7 +328,7 @@ control plane. It should be run after "linkerd install config".`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// check if global resources exist to determine if the `install config`
 			// stage succeeded
-			if err := errIfGlobalResourcesExist(); err == nil && !options.skipChecks {
+			if err := errIfGlobalResourcesExist(options); err == nil && !options.skipChecks {
 				fmt.Fprintf(os.Stderr, errMsgGlobalResourcesMissing, controlPlaneNamespace)
 				os.Exit(1)
 			}
@@ -379,7 +379,7 @@ control plane.`,
   # Installation may also be broken up into two stages by user privilege, via
   # subcommands.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := errIfGlobalResourcesExist(); err != nil && !options.ignoreCluster {
+			if err := errIfGlobalResourcesExist(options); err != nil && !options.ignoreCluster {
 				fmt.Fprintf(os.Stderr, errMsgGlobalResourcesExist, err)
 				os.Exit(1)
 			}
@@ -873,7 +873,7 @@ func (options *installOptions) proxyConfig() *pb.Proxy {
 	}
 }
 
-func errIfGlobalResourcesExist() error {
+func errIfGlobalResourcesExist(options *installOptions) error {
 	checks := []healthcheck.CategoryID{
 		healthcheck.KubernetesAPIChecks,
 		healthcheck.LinkerdPreInstallGlobalResourcesChecks,
@@ -883,6 +883,7 @@ func errIfGlobalResourcesExist() error {
 		ControlPlaneNamespace: controlPlaneNamespace,
 		KubeConfig:            kubeconfigPath,
 		Impersonate:           impersonate,
+		NoInitContainer:       options.noInitContainer,
 	})
 
 	errMsgs := []string{}
